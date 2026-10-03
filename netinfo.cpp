@@ -1,8 +1,3 @@
-// netinfo.cpp - quick network status tool for Linux
-// Build: g++ -std=c++17 -O2 -Wall -o netinfo netinfo.cpp
-// Run:   ./netinfo [--no-speed]
-// Optional: `iw` installed (pacman -S iw) for SSID / signal / bitrate details.
-
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
@@ -58,7 +53,7 @@ static std::string runCmd(const std::string& cmd) {
     return out;
 }
 
-// ---------- interfaces ----------
+// -interfaces
 struct Iface {
     std::string name, state, ip, mac;
     bool wireless = false;
@@ -92,7 +87,7 @@ static std::vector<Iface> getInterfaces() {
     return v;
 }
 
-// ---------- routing / dns ----------
+// -routing / DNS
 static bool defaultGateway(std::string& iface, std::string& gw) {
     std::ifstream f("/proc/net/route");
     std::string line;
@@ -127,11 +122,10 @@ static std::vector<std::string> dnsServers() {
     return v;
 }
 
-// ---------- wifi ----------
+// -wifi
 static void printWifi(const std::string& ifname) {
     std::string out = runCmd("iw dev " + ifname + " link 2>/dev/null");
     if (out.empty()) {
-        // fallback: /proc/net/wireless
         std::ifstream f("/proc/net/wireless");
         std::string line;
         while (std::getline(f, line)) {
@@ -160,7 +154,7 @@ static void printWifi(const std::string& ifname) {
     }
 }
 
-// ---------- latency ----------
+// -latency
 static bool makeAddr(const std::string& host, int port, sockaddr_in& out, double* dnsMs = nullptr) {
     addrinfo hints{}, *res = nullptr;
     hints.ai_family = AF_INET;
@@ -173,7 +167,7 @@ static bool makeAddr(const std::string& host, int port, sockaddr_in& out, double
     return true;
 }
 
-// TCP connect time; ECONNREFUSED still counts (host answered)
+// TCP connect time
 static double tcpRtt(const sockaddr_in& addr, int timeoutMs) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) return -1;
@@ -227,7 +221,7 @@ static void latencyTest(const std::string& label, const std::string& host, int p
               << " ms  jitter " << jit << " ms  loss " << lost << "/" << samples << "\n";
 }
 
-// ---------- download speed (plain HTTP, no TLS) ----------
+// -download speed
 static void downloadTest(const std::string& host, const std::string& path, double maxSeconds) {
     addrinfo hints{}, *res = nullptr;
     hints.ai_family = AF_INET;
@@ -265,7 +259,7 @@ static void downloadTest(const std::string& host, const std::string& path, doubl
                 close(fd);
                 return;
             }
-            t0 = Clock::now();  // start timing at first byte (excludes connect + TTFB)
+            t0 = Clock::now();  // start timing at first byte
             first = false;
             continue;
         }
